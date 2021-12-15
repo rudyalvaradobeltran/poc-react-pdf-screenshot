@@ -8,7 +8,10 @@ import Pato from './Pato';
 ReactDOM.render(
   <React.StrictMode>
     <App>
-      <Screenshot componente={Pato} nombreArchivo={'pato'} />
+      <Screenshot 
+        componente={<Pato texto="Hola loco" />} 
+        nombreArchivo="pato"
+      />
     </App>
   </React.StrictMode>,
   document.getElementById('root')

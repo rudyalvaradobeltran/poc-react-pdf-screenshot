@@ -1,24 +1,29 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useLayoutEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import { toBlob } from 'html-to-image';
-import jsPDF from "jspdf";
+import { jsPDF as JSPDF } from "jspdf";
 import FileSaver from 'file-saver';
 
 const Screenshot = ({ componente, nombreArchivo }) => {
   const ref = useRef(null);
+  const [dimensiones, setDimensiones] = useState({ ancho: 0, alto: 0 });
 
-  const obtieneDimensionesPantalla = () => {
-    const { innerWidth: ancho, innerHeight: alto } = window;
-    return { ancho, alto };
-  }
+  useLayoutEffect(() => {
+    if (ref.current) {
+      setDimensiones({
+        ancho: ref.current.offsetWidth,
+        alto: ref.current.offsetHeight
+      });
+    }
+  }, []);
 
-  const obtieneScreenshot = useCallback(() => () => {
+  const obtieneScreenshot = useCallback(() => async () => {
     if (ref.current === null) {
       return
     }
     const generaPDFDesdeImagen = (imagen) => {
-      let dimensiones = obtieneDimensionesPantalla();
-      let orientacion = dimensiones.ancho > dimensiones.alto ? 'l' : 'p'; //landscape - portrait
-      const doc = new jsPDF(orientacion, 'px', [dimensiones.ancho, dimensiones.alto]);
+      const orientacion = dimensiones.ancho > dimensiones.alto ? 'l' : 'p'; // landscape - portrait
+      const doc = new JSPDF(orientacion, 'px', [dimensiones.ancho, dimensiones.alto]);
       doc.deletePage(1);
       imagen.src = URL.createObjectURL(imagen);
       doc.addPage();
@@ -26,23 +31,32 @@ const Screenshot = ({ componente, nombreArchivo }) => {
       const pdfURL = doc.output('bloburl');
       FileSaver.saveAs(pdfURL, `${nombreArchivo}.pdf`);
     };
-    toBlob(ref.current, { cacheBust: true })
+    await toBlob(ref.current, { cacheBust: true })
       .then((imagen) => {
         return generaPDFDesdeImagen(imagen);
       })
       .catch((err) => {
         console.log(err);
       });
-  }, [ref, nombreArchivo]);
+  }, [ref, nombreArchivo, dimensiones]);
 
   return (
     <>
       <div ref={ref}>
-        {componente()}
+        {componente}
       </div>
-      <button className="btn" onClick={obtieneScreenshot()}>Screenshot</button>
+      <button type="button" className="btn" onClick={obtieneScreenshot()}>{`Screenshot: ${dimensiones.ancho.toString()}x${dimensiones.alto.toString()}`}</button>
     </>
   );
 }
+
+Screenshot.propTypes = {
+  componente: PropTypes.element,
+  nombreArchivo: PropTypes.string,
+};
+Screenshot.defaultProps = {
+  componente: null,
+  nombreArchivo: '',
+};
 
 export default Screenshot;

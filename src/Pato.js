@@ -1,12 +1,12 @@
 import React from 'react';
 import PatoImagen from './pato.jpg';
 
-const Pato = () => {
+const Pato = ({ texto }) => {
   return (
     <header className="header">
       <img src={PatoImagen} className="pato" alt="pato" />
       <p>
-        Hola
+        {texto}
       </p>
     </header>
   );
